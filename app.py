@@ -2,6 +2,32 @@ from flask import Flask
 import redis
 import time
 import os
+from splitio import get_factory
+from splitio.exceptions import TimeoutException
+from dotenv import load_dotenv
+
+
+# Carga las variables de entorno desde el archivo .env
+load_dotenv()
+
+# Lee la clave de la variable de entorno
+splitio_key = os.getenv('SPLITIO_API_KEY')
+
+if not splitio_key:
+    raise Exception("SPLITIO_API_KEY no se encontró en las variables de entorno.")
+
+factory = get_factory(splitio_key)
+
+try:
+    factory.block_until_ready(5) ## wait up to 5 seconds
+    print("✅ Cliente de Split.io está listo")
+except TimeoutException:
+    print("⚠️ Advertencia: El cliente de Split.io no está listo después de 5 segundos.")
+    ## Now the user can choose whether to abort the whole execution, or just keep going
+    ## without a ready client, which if configured properly, should become ready at some point.
+    pass
+split = factory.client()
+
 
 app = Flask(__name__)
 
