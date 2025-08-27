@@ -1,5 +1,5 @@
 Flask==2.3.3
 redis==4.6.0
 python-dotenv==1.0.0
-splitio_client[cpphash]==10.4.0
+splitio-client==10.4.0
 requests==2.31.0

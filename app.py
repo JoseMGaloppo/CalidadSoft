@@ -5,7 +5,7 @@ import os
 from splitio import get_factory
 from splitio.exceptions import TimeoutException
 from dotenv import load_dotenv
-
+from flask import request
 
 # Carga las variables de entorno desde el archivo .env
 load_dotenv()
@@ -28,7 +28,6 @@ except TimeoutException:
     pass
 split = factory.client()
 
-
 app = Flask(__name__)
 
 def wait_for_redis():
@@ -48,24 +47,43 @@ def wait_for_redis():
     
     raise Exception("❌ No se pudo conectar a Redis")
 
+
 @app.route('/')
 def contador_visitas():
+    user_id = request.args.get("user", "anonymous")
     try:
+        treatment = split.get_treatment(user_id, "Practico1")
         redis_client = wait_for_redis()
         visitas = redis_client.incr('visitas')
-        return f'''
+
+        # HTML base
+        html = f'''
         <html>
             <body style="font-family: Arial; text-align: center; padding: 50px;">
                 <h1>📊 Contador de Visitas</h1>
                 <p style="font-size: 24px;">¡Número de visitas: <strong>{visitas}</strong>! 🎉</p>
                 <p>✅ Redis funcionando correctamente</p>
+        '''
+        
+        if treatment == "on":
+            html += '<p>🚀 Feature habilitado para este usuario</p>'
+        elif treatment == "off":
+            html += '<p>⛔ Feature deshabilitado para este usuario</p>'
+        else:  # control o error
+            html += '<p>⚠️ Estado del feature desconocido (control)</p>'
+
+        html += '''
                 <a href="/reiniciar">🔄 Reiniciar contador</a> | 
                 <a href="/health">❤️ Health check</a>
             </body>
         </html>
         '''
+
+        return html
+
     except Exception as e:
         return f'❌ Error: {str(e)}'
+
 
 @app.route('/reiniciar')
 def reiniciar_contador():
